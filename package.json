@@ -7,11 +7,11 @@
   "type": "module",
   "main": "src/server.js",
   "bin": {
-    "modelmux": "./src/server.js"
+    "modelmux": "src/server.js"
   },
   "scripts": {
     "start": "node src/server.js",
-    "test":  "node src/test.js"
+    "test": "node src/test.js"
   },
   "engines": {
     "node": ">=18.0.0"
