@@ -28,6 +28,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/JRWoodcock/modelmux.git"
-  }
+    "url": "git+https://github.com/JRWoodcock/modelmux.git"
+  },
+  "homepage": "https://github.com/JRWoodcock/modelmux#readme",
+  "bugs": {
+    "url": "https://github.com/JRWoodcock/modelmux/issues"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ]
 }
