@@ -63,6 +63,23 @@ The installer will:
 
 Then restart Claude Code and/or Codex to pick up the new MCP server.
 
+### Install from npm
+
+The server is also published to npm. This gives you the `modelmux` command
+without cloning, but does not set up API keys or register the server — run those
+steps yourself (see [API keys](#api-keys) and the registration commands below).
+
+```bash
+npm install -g @jrwoodcock/modelmux
+
+# Register the installed command with each agent:
+claude mcp add modelmux -- modelmux
+codex mcp add modelmux -- modelmux
+```
+
+The package name is scoped (`@jrwoodcock/modelmux`), but the installed command
+is just `modelmux`.
+
 ### Installing on multiple Macs
 
 Same steps on each machine. The installer creates `~/.modelmux/` locally from the cloned repo. Your API keys are stored in `~/.zshrc` on each machine separately — enter them fresh on each install (or sync your dotfiles if you already do that).

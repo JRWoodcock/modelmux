@@ -1,5 +1,5 @@
 {
-  "name": "modelmux",
+  "name": "@jrwoodcock/modelmux",
   "version": "2.0.0",
   "description": "MCP server that lets Claude Code, Codex, and Perplexity call each other as tools. Supports text, code, images, and PDFs passed by file path.",
   "author": "Jason R. Woodcock",
@@ -8,6 +8,9 @@
   "main": "src/server.js",
   "bin": {
     "modelmux": "src/server.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "start": "node src/server.js",
