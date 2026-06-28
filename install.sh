@@ -164,11 +164,12 @@ if command -v claude &>/dev/null; then
   if grep -q "modelmux" "$CLAUDE_SETTINGS" 2>/dev/null; then
     warn "modelmux is already listed in ${CLAUDE_SETTINGS} — skipping"
   else
-    # Attempt registration via the claude CLI. If the settings file does not
-    # exist yet, create it with a minimal valid configuration as a fallback.
+    # Attempt registration via the claude CLI. Only fall back to writing a
+    # settings file if one does not already exist — never overwrite an existing
+    # configuration, as that would clobber the user's other Claude Code settings.
     if claude mcp add modelmux -- node "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
       success "Registered with Claude Code via 'claude mcp add'"
-    else
+    elif [ ! -e "$CLAUDE_SETTINGS" ]; then
       mkdir -p "$HOME/.claude"
       cat > "$CLAUDE_SETTINGS" <<EOF
 {
@@ -181,6 +182,10 @@ if command -v claude &>/dev/null; then
 }
 EOF
       success "Created ${CLAUDE_SETTINGS} with modelmux entry"
+    else
+      warn "Could not auto-register and ${CLAUDE_SETTINGS} already exists — leaving it untouched."
+      warn "Register manually with:"
+      warn "  claude mcp add modelmux -- node ${MODELMUX_DIR}/src/server.js"
     fi
   fi
 else

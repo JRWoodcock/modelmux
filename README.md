@@ -275,7 +275,12 @@ You need a small amount of credit loaded on each API account — even $5 on each
 modelmux/
 ├── install.sh          ← run this on each Mac
 ├── package.json
+├── package-lock.json
 ├── README.md
+├── CLAUDE.md           ← guidance for AI coding agents working on the repo
+├── LICENSE             ← Apache-2.0
+├── NOTICE              ← attribution notice (Apache-2.0)
+├── .gitignore
 └── src/
     ├── server.js       ← the MCP server (stdio transport, no dependencies)
     └── test.js         ← API connectivity smoke test
