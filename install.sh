@@ -19,7 +19,7 @@
 #   5. Runs the connectivity and file I/O test to confirm everything works
 #
 # Author:  Jason R. Woodcock
-# License: See the LICENSE file — free to use, attribution required, no redistribution.
+# License: Apache-2.0 — see the LICENSE and NOTICE files.
 # =============================================================================
 
 set -e  # Exit immediately if any command fails

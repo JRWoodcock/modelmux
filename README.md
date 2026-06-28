@@ -4,7 +4,7 @@
 
 **Author:** Jason R. Woodcock
 **Version:** 2.0.0
-**License:** Free to use, attribution required, no redistribution — see [LICENSE](LICENSE)
+**License:** Apache-2.0 — see [LICENSE](LICENSE)
 
 Instead of copy-pasting between AI tools, you can say things like:
 
@@ -323,7 +323,7 @@ Then remove the API key exports from `~/.zshrc` if desired.
 
 ## Contributing
 
-Pull requests back to this repository are welcome. The server is intentionally minimal — a single file with no npm dependencies. Keep it that way if you can. By submitting a contribution you agree it will be covered by the project's license (see below).
+Pull requests welcome. The server is intentionally minimal — a single file with no npm dependencies. Keep it that way if you can. Contributions are accepted under the Apache-2.0 license (per section 5 of the license).
 
 If you add support for a new file type or AI provider, update the file support matrix in this README and add a test case to `src/test.js`.
 
@@ -337,16 +337,15 @@ Jason R. Woodcock
 
 ## License
 
-Copyright © 2026 Jason R. Woodcock. All rights reserved.
+Licensed under the **Apache License, Version 2.0**.
+Copyright © 2026 Jason R. Woodcock.
 
-modelmux is **free to use** by anyone — personal, internal, educational, or
-commercial — and you may modify it for your own use, subject to two conditions:
+You are free to use, modify, and redistribute this software, including for
+commercial purposes. In return, the license requires that you:
 
-- **Attribution is always required.** Keep the copyright notice and visibly
-  credit Jason R. Woodcock with a link back to this project wherever the
-  software is used.
-- **Redistribution is not permitted.** You may not republish, mirror, repackage,
-  sublicense, or sell the software (modified or not). Each user should obtain it
-  directly from this repository.
+- retain the copyright, license, and attribution notices (see [NOTICE](NOTICE));
+- state any significant changes you make to the files; and
+- include a copy of the license with any redistribution.
 
-See the [LICENSE](LICENSE) file for the full terms.
+It also includes an explicit patent grant from contributors. See the
+[LICENSE](LICENSE) and [NOTICE](NOTICE) files for the full terms.

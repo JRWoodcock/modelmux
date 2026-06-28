@@ -18,7 +18,7 @@
  *
  * @author  Jason R. Woodcock
  * @version 2.0.0
- * @license See the LICENSE file — free to use, attribution required, no redistribution.
+ * @license Apache-2.0 — see the LICENSE and NOTICE files.
  */
 
 import { writeFileSync, readFileSync, unlinkSync } from "fs";
