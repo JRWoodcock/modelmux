@@ -1,0 +1,35 @@
+modelmux License
+Copyright (c) 2026 Jason R. Woodcock. All rights reserved.
+
+Permission is granted, free of charge, to any person obtaining a copy of this
+software and its associated documentation (the "Software") to use the Software
+for any purpose — including personal, internal, educational, and commercial use
+— and to modify the Software for their own use, subject to the conditions below.
+
+1. Attribution.
+   Every copy or modified version of the Software, and any product, project, or
+   documentation that incorporates or is built using the Software, must retain
+   the above copyright notice and must visibly credit the original author,
+   Jason R. Woodcock, along with a reference to the original project at
+   https://github.com/JRWoodcock/modelmux. This attribution requirement applies
+   in all cases and may not be removed or obscured.
+
+2. No Redistribution.
+   The Software may not be redistributed, republished, mirrored, repackaged,
+   sublicensed, sold, rented, or otherwise made available to any third party,
+   whether in original or modified form and whether in whole or in part, without
+   the prior written permission of the copyright holder. Each user must obtain
+   the Software directly from the official source identified above.
+
+3. No Warranty.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+   FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+   IN THE SOFTWARE.
+
+Any use of the Software constitutes acceptance of these terms. For permissions
+beyond the scope of this license — including any redistribution — contact the
+copyright holder.

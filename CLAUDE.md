@@ -54,3 +54,6 @@ bash install.sh   # install + register on a machine
 - When adding a new file type or AI provider: update the file-support matrix in
   [README.md](README.md) and add a corresponding case to `src/test.js`.
 - Match the existing heavily-commented, section-divider style in `server.js`.
+- License: custom (see [LICENSE](LICENSE)) — free to use, attribution always
+  required, no redistribution. It is **not** MIT/open source; don't reintroduce
+  an MIT notice. `package.json` uses `"SEE LICENSE IN LICENSE"` per npm convention.

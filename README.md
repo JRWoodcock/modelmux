@@ -4,7 +4,7 @@
 
 **Author:** Jason R. Woodcock
 **Version:** 2.0.0
-**License:** MIT
+**License:** Free to use, attribution required, no redistribution — see [LICENSE](LICENSE)
 
 Instead of copy-pasting between AI tools, you can say things like:
 
@@ -323,7 +323,7 @@ Then remove the API key exports from `~/.zshrc` if desired.
 
 ## Contributing
 
-Pull requests welcome. The server is intentionally minimal — a single file with no npm dependencies. Keep it that way if you can.
+Pull requests back to this repository are welcome. The server is intentionally minimal — a single file with no npm dependencies. Keep it that way if you can. By submitting a contribution you agree it will be covered by the project's license (see below).
 
 If you add support for a new file type or AI provider, update the file support matrix in this README and add a test case to `src/test.js`.
 
@@ -337,4 +337,16 @@ Jason R. Woodcock
 
 ## License
 
-MIT
+Copyright © 2026 Jason R. Woodcock. All rights reserved.
+
+modelmux is **free to use** by anyone — personal, internal, educational, or
+commercial — and you may modify it for your own use, subject to two conditions:
+
+- **Attribution is always required.** Keep the copyright notice and visibly
+  credit Jason R. Woodcock with a link back to this project wherever the
+  software is used.
+- **Redistribution is not permitted.** You may not republish, mirror, repackage,
+  sublicense, or sell the software (modified or not). Each user should obtain it
+  directly from this repository.
+
+See the [LICENSE](LICENSE) file for the full terms.

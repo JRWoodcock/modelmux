@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "MCP server that lets Claude Code, Codex, and Perplexity call each other as tools. Supports text, code, images, and PDFs passed by file path.",
   "author": "Jason R. Woodcock",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "main": "src/server.js",
   "bin": {

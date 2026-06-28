@@ -26,7 +26,7 @@
  *
  * @author  Jason R. Woodcock
  * @version 2.0.0
- * @license MIT
+ * @license See the LICENSE file — free to use, attribution required, no redistribution.
  */
 
 import { readFileSync, existsSync, statSync } from "fs";
