@@ -1,0 +1,33 @@
+{
+  "name": "modelmux",
+  "version": "2.0.0",
+  "description": "MCP server that lets Claude Code, Codex, and Perplexity call each other as tools. Supports text, code, images, and PDFs passed by file path.",
+  "author": "Jason R. Woodcock",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "modelmux": "./src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test":  "node src/test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "codex",
+    "perplexity",
+    "modelmux",
+    "multi-agent",
+    "llm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JRWoodcock/modelmux.git"
+  }
+}
