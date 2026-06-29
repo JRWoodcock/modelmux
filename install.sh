@@ -163,10 +163,17 @@ source "$SHELL_RC" 2>/dev/null || true
 # shell by the `source "$SHELL_RC"` above.)
 # ---------------------------------------------------------------------------
 
-ENV_FLAGS=()
-[ -n "$ANTHROPIC_API_KEY" ]  && ENV_FLAGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
-[ -n "$OPENAI_API_KEY" ]     && ENV_FLAGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY")
-[ -n "$PERPLEXITY_API_KEY" ] && ENV_FLAGS+=(-e "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY")
+# Claude uses `-e KEY=VALUE`; Codex uses `--env KEY=VALUE`. Build both.
+ENV_FLAGS=()        # for claude
+CODEX_ENV_FLAGS=()  # for codex
+if [ -n "$ANTHROPIC_API_KEY" ];  then ENV_FLAGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   CODEX_ENV_FLAGS+=(--env "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   fi
+if [ -n "$OPENAI_API_KEY" ];     then ENV_FLAGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY");         CODEX_ENV_FLAGS+=(--env "OPENAI_API_KEY=$OPENAI_API_KEY");         fi
+if [ -n "$PERPLEXITY_API_KEY" ]; then ENV_FLAGS+=(-e "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); CODEX_ENV_FLAGS+=(--env "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); fi
+
+# Resolve an absolute path to node. Dock-launched apps often lack the user's PATH
+# (e.g. an nvm-managed node), so registering the server with a bare "node" can
+# fail to launch. Fall back to "node" if it can't be resolved here.
+NODE_BIN=$(command -v node 2>/dev/null || echo node)
 
 # Locate a usable `claude` executable. Prefer one on PATH (the standalone CLI);
 # otherwise fall back to the binary bundled inside the Claude Desktop app, which
@@ -202,14 +209,14 @@ if [ -n "$CLAUDE_BIN" ]; then
     warn "modelmux is already registered with Claude Code — skipping"
   # Register at user scope so modelmux is available in every project, with the
   # API keys baked in as env vars (see the ENV_FLAGS note above).
-  elif "$CLAUDE_BIN" mcp add -s user "${ENV_FLAGS[@]}" modelmux -- node "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
+  elif "$CLAUDE_BIN" mcp add -s user "${ENV_FLAGS[@]}" modelmux -- "$NODE_BIN" "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
     success "Registered with Claude Code (user scope, keys included)"
     if ! command -v claude &>/dev/null; then
       info "Used the Claude Desktop app's bundled binary (no 'claude' CLI on PATH)."
     fi
   else
     warn "Claude registration failed. Register manually with:"
-    warn "  \"$CLAUDE_BIN\" mcp add -s user ${ENV_FLAGS[*]:+<your -e keys>} modelmux -- node ${MODELMUX_DIR}/src/server.js"
+    warn "  \"$CLAUDE_BIN\" mcp add -s user ${ENV_FLAGS[*]:+<your -e keys>} modelmux -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
   fi
 else
   warn "No 'claude' command or Claude Desktop app was found. Skipping Claude registration."
@@ -217,27 +224,53 @@ else
   warn "  claude mcp add -s user -e ANTHROPIC_API_KEY=... modelmux -- node ${MODELMUX_DIR}/src/server.js"
 fi
 
+# Locate a usable `codex` executable. Prefer one on PATH; otherwise fall back to
+# the binary bundled inside the Codex Desktop app, which is not on PATH but works
+# the same way for `mcp` subcommands.
+find_codex() {
+  if command -v codex &>/dev/null; then
+    command -v codex
+    return 0
+  fi
+  local candidate
+  for candidate in \
+    "$HOME/.codex/plugins/.plugin-appserver/codex" \
+    "/Applications/Codex.app/Contents/Resources/codex" \
+    "/Applications/Codex.app/Contents/MacOS/codex"; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # Register with Codex
 # ---------------------------------------------------------------------------
 
 header "Registering with Codex"
 
-if command -v codex &>/dev/null; then
-  if codex mcp list 2>/dev/null | grep -q "modelmux"; then
+CODEX_BIN=$(find_codex || true)
+
+if [ -n "$CODEX_BIN" ]; then
+  if "$CODEX_BIN" mcp list 2>/dev/null | grep -q "modelmux"; then
     warn "modelmux is already registered with Codex — skipping"
-  else
-    if codex mcp add modelmux -- node "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
-      success "Registered with Codex via 'codex mcp add'"
-    else
-      warn "Codex auto-registration failed. Once Codex is running, register manually:"
-      warn "  codex mcp add modelmux -- node ${MODELMUX_DIR}/src/server.js"
+  # Keys are embedded as env vars for the same reason as Claude (the Codex
+  # Desktop app does not load ~/.zshrc). node is referenced by absolute path.
+  elif "$CODEX_BIN" mcp add "${CODEX_ENV_FLAGS[@]}" modelmux -- "$NODE_BIN" "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
+    success "Registered with Codex (keys included)"
+    if ! command -v codex &>/dev/null; then
+      info "Used the Codex Desktop app's bundled binary (no 'codex' CLI on PATH)."
     fi
+  else
+    warn "Codex registration failed. Register manually with:"
+    warn "  \"$CODEX_BIN\" mcp add ${CODEX_ENV_FLAGS[*]:+<your --env keys>} modelmux -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
   fi
 else
-  warn "The codex CLI was not found. Skipping Codex registration."
-  warn "Once Codex is installed, run:"
-  warn "  codex mcp add modelmux -- node ${MODELMUX_DIR}/src/server.js"
+  warn "No 'codex' command or Codex Desktop app was found. Skipping Codex registration."
+  warn "Once Codex (CLI or Desktop app) is installed, register with:"
+  warn "  codex mcp add --env OPENAI_API_KEY=... modelmux -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
 fi
 
 # ---------------------------------------------------------------------------

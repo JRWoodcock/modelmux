@@ -63,14 +63,14 @@ The installer will:
 
 Then restart Claude Code and/or Codex to pick up the new MCP server.
 
-> **Using the Claude Desktop app?** It works, with two caveats the installer
-> handles automatically: there's no `claude` command on your PATH (the installer
-> finds the app's bundled binary instead), and the app can't read API keys from
-> `~/.zshrc` (so the keys are baked into the server's config at registration).
-> After installing, **fully quit the app with Cmd+Q** — not just closing the
-> window — then reopen it. modelmux appears under **Settings → MCP** as a *user*
-> server (available in every project). See [Troubleshooting](#troubleshooting) if
-> it doesn't show up.
+> **Using the Claude or Codex Desktop app?** Both work, with two caveats the
+> installer handles automatically: there's no `claude`/`codex` command on your
+> PATH (the installer finds each app's bundled binary instead), and the apps
+> can't read API keys from `~/.zshrc` (so the keys are baked into the server's
+> config at registration). After installing, **fully quit the app with Cmd+Q** —
+> not just closing the window — then reopen it. In Claude, modelmux appears under
+> **Settings → MCP** as a *user* server (available in every project). See
+> [Troubleshooting](#troubleshooting) if it doesn't show up.
 
 ### Install from npm
 
@@ -120,19 +120,36 @@ claude mcp add -s user \
   -e PERPLEXITY_API_KEY="pplx-..." modelmux -- node ~/.modelmux/src/server.js
 ```
 
-> **Why `--env`?** The Claude Desktop app is launched from the Dock, so it does
+> **Why embed the keys?** A Desktop app is launched from the Dock, so it does
 > **not** load `~/.zshrc` — a server it spawns can't see API keys exported there.
-> Passing the keys with `-e` stores them in the MCP config so they're always
-> found. Trade-off: if you later rotate a key in `~/.zshrc`, re-run the
-> registration (or edit the entry) so the stored copy is updated too.
+> Passing the keys at registration (`-e` for Claude, `--env` for Codex) stores
+> them in the MCP config so they're always found. Trade-off: if you later rotate
+> a key in `~/.zshrc`, re-run the registration (or edit the entry) so the stored
+> copy is updated too. The CLI tools inherit keys from your shell, but embedding
+> them is harmless and keeps both paths identical.
 
-**Codex:**
+**Codex (CLI):** Codex uses `--env` (not `-e`):
 ```bash
-codex mcp add modelmux -- node ~/.modelmux/src/server.js
+codex mcp add \
+  --env ANTHROPIC_API_KEY="sk-ant-..." \
+  --env OPENAI_API_KEY="sk-..." \
+  --env PERPLEXITY_API_KEY="pplx-..." \
+  modelmux -- node ~/.modelmux/src/server.js
 ```
-(Codex runs from your terminal, so it inherits keys from `~/.zshrc` — no `--env` needed.)
 
-After registering, **fully quit and reopen** Claude Code / the Desktop app (Cmd+Q, not just closing the window) so it loads the new server.
+**Codex Desktop app (no `codex` on PATH):** the app bundles the CLI — call it directly:
+```bash
+~/.codex/plugins/.plugin-appserver/codex \
+  mcp add --env ANTHROPIC_API_KEY="sk-ant-..." --env OPENAI_API_KEY="sk-..." \
+  --env PERPLEXITY_API_KEY="pplx-..." modelmux -- node ~/.modelmux/src/server.js
+```
+
+> **Tip:** if a Desktop app can't launch the server (it shows as failed/not
+> connected), use the **absolute path to node** instead of bare `node` — apps
+> launched from the Dock may not have your `node` on PATH (common with nvm).
+> Find it with `command -v node`, e.g. `/Users/you/.nvm/versions/node/vXX/bin/node`.
+
+After registering, **fully quit and reopen** the app (Cmd+Q, not just closing the window) so it loads the new server.
 
 ---
 
@@ -341,11 +358,14 @@ modelmux/
 **Tools don't appear in Claude Code or Codex**
 Restart the app after registration. MCP servers are loaded at startup — and for the Desktop app you must fully quit it (Cmd+Q), not just close the window.
 
-**Nothing shows up under MCP servers in the Claude Desktop app**
-The installer's auto-registration only runs if it can find a `claude` command. The Desktop app has no `claude` on your PATH, so on older installs the step was skipped. Re-run `bash install.sh` (it now detects the app's bundled binary), or register manually using the **Claude Desktop app** commands under [Manual registration](#manual-registration-if-the-installer-skipped-a-tool). Note it registers at **user** scope, so it appears as a *user* server (available everywhere), not a *local* one.
+**Nothing shows up under MCP servers in the Claude or Codex Desktop app**
+The installer's auto-registration only runs if it can find a `claude`/`codex` command. The Desktop apps have neither on your PATH, so on older installs the step was skipped. Re-run `bash install.sh` (it now detects each app's bundled binary), or register manually using the **Desktop app** commands under [Manual registration](#manual-registration-if-the-installer-skipped-a-tool). In Claude it registers at **user** scope, so it appears as a *user* server (available everywhere), not a *local* one.
 
 **"X_API_KEY not set" error**
-In a **terminal**-launched tool, run `source ~/.zshrc` first (or open a fresh terminal). In the **Claude Desktop app**, exporting keys in `~/.zshrc` is not enough — the app doesn't read your shell profile. Register modelmux with the keys passed as `-e` env values (see [Manual registration](#manual-registration-if-the-installer-skipped-a-tool)); the installer does this for you.
+In a **terminal**-launched tool, run `source ~/.zshrc` first (or open a fresh terminal). In a **Desktop app** (Claude or Codex), exporting keys in `~/.zshrc` is not enough — the app doesn't read your shell profile. Register modelmux with the keys passed as env values (`-e` for Claude, `--env` for Codex; see [Manual registration](#manual-registration-if-the-installer-skipped-a-tool)); the installer does this for you.
+
+**Server shows as failed / won't launch in a Desktop app**
+The app may not have `node` on its PATH (common when node is managed by nvm). Re-register using the **absolute path to node** instead of bare `node` — find it with `command -v node`. The installer already does this automatically.
 
 **Connectivity test fails**
 Check that the key is correct and that your API account has credit loaded. Perplexity requires a paid API plan (separate from Perplexity Pro).
