@@ -63,6 +63,15 @@ The installer will:
 
 Then restart Claude Code and/or Codex to pick up the new MCP server.
 
+> **Using the Claude Desktop app?** It works, with two caveats the installer
+> handles automatically: there's no `claude` command on your PATH (the installer
+> finds the app's bundled binary instead), and the app can't read API keys from
+> `~/.zshrc` (so the keys are baked into the server's config at registration).
+> After installing, **fully quit the app with Cmd+Q** — not just closing the
+> window — then reopen it. modelmux appears under **Settings → MCP** as a *user*
+> server (available in every project). See [Troubleshooting](#troubleshooting) if
+> it doesn't show up.
+
 ### Install from npm
 
 The server is also published to npm. This gives you the `modelmux` command
