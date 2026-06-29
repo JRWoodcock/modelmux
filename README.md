@@ -104,20 +104,20 @@ bash install.sh
 
 If Claude Code or Codex wasn't found during install, register manually after installing them.
 
-**Claude Code (CLI):** register at user scope and pass your keys as `--env` values, so the server has them no matter how the host is launched:
+**Claude Code (CLI):** register at user scope and pass your keys as `-e` values, so the server has them no matter how the host is launched. The server name (`modelmux`) must come **before** the `-e` flags — `-e` is variadic and would otherwise consume the name:
 ```bash
-claude mcp add -s user \
+claude mcp add -s user modelmux \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
   -e PERPLEXITY_API_KEY="pplx-..." \
-  modelmux -- node ~/.modelmux/src/server.js
+  -- node ~/.modelmux/src/server.js
 ```
 
 **Claude Desktop app (no `claude` on PATH):** the app bundles the CLI — call it directly with the same arguments:
 ```bash
 "$HOME/Library/Application Support/Claude/claude-code/"*/claude.app/Contents/MacOS/claude \
-  mcp add -s user -e ANTHROPIC_API_KEY="sk-ant-..." -e OPENAI_API_KEY="sk-..." \
-  -e PERPLEXITY_API_KEY="pplx-..." modelmux -- node ~/.modelmux/src/server.js
+  mcp add -s user modelmux -e ANTHROPIC_API_KEY="sk-ant-..." -e OPENAI_API_KEY="sk-..." \
+  -e PERPLEXITY_API_KEY="pplx-..." -- node ~/.modelmux/src/server.js
 ```
 
 > **Why embed the keys?** A Desktop app is launched from the Dock, so it does
@@ -167,6 +167,16 @@ export PERPLEXITY_API_KEY="pplx-..."     # perplexity.ai/settings/api
 Then `source ~/.zshrc` and restart Claude Code / Codex.
 
 You only need keys for the tools you plan to use. The `broker` tool's synthesis step uses Claude, so `ANTHROPIC_API_KEY` is the most important one.
+
+### Updating keys (Desktop apps)
+
+Because the Desktop apps embed your keys in their MCP config (they don't read `~/.zshrc`), changing a key in `~/.zshrc` is not enough — the embedded copy goes stale. After rotating a key, re-sync both apps in one command:
+
+```bash
+bash ~/.modelmux/update-keys.sh        # or ./update-keys.sh from the cloned repo
+```
+
+It reloads the keys from `~/.zshrc` and re-registers modelmux with Claude and Codex (whichever it finds). Restart the apps (Cmd+Q, then reopen) afterward. Terminal CLIs don't need this — they read `~/.zshrc` directly.
 
 ### Optional model overrides
 
@@ -337,6 +347,7 @@ You need a small amount of credit loaded on each API account — even $5 on each
 ```
 modelmux/
 ├── install.sh          ← run this on each Mac
+├── update-keys.sh      ← re-sync API keys into the Desktop apps after rotating
 ├── package.json
 ├── package-lock.json
 ├── README.md

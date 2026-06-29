@@ -84,6 +84,9 @@ cp "$SCRIPT_DIR/src/server.js" "$MODELMUX_DIR/src/server.js"
 cp "$SCRIPT_DIR/src/test.js"   "$MODELMUX_DIR/src/test.js"
 cp "$SCRIPT_DIR/package.json"  "$MODELMUX_DIR/package.json"
 
+# Copy the key-refresh helper so it can be run later from the install location.
+[ -f "$SCRIPT_DIR/update-keys.sh" ] && cp "$SCRIPT_DIR/update-keys.sh" "$MODELMUX_DIR/update-keys.sh"
+
 # Ensure the server is executable so it can be invoked directly if needed.
 chmod +x "$MODELMUX_DIR/src/server.js"
 
@@ -209,19 +212,21 @@ if [ -n "$CLAUDE_BIN" ]; then
     warn "modelmux is already registered with Claude Code — skipping"
   # Register at user scope so modelmux is available in every project, with the
   # API keys baked in as env vars (see the ENV_FLAGS note above).
-  elif "$CLAUDE_BIN" mcp add -s user "${ENV_FLAGS[@]}" modelmux -- "$NODE_BIN" "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
+  # NOTE: the server NAME must come before the -e flags. Claude's -e is variadic
+  # and would otherwise swallow "modelmux" as an environment variable.
+  elif "$CLAUDE_BIN" mcp add -s user modelmux "${ENV_FLAGS[@]}" -- "$NODE_BIN" "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
     success "Registered with Claude Code (user scope, keys included)"
     if ! command -v claude &>/dev/null; then
       info "Used the Claude Desktop app's bundled binary (no 'claude' CLI on PATH)."
     fi
   else
     warn "Claude registration failed. Register manually with:"
-    warn "  \"$CLAUDE_BIN\" mcp add -s user ${ENV_FLAGS[*]:+<your -e keys>} modelmux -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
+    warn "  \"$CLAUDE_BIN\" mcp add -s user modelmux ${ENV_FLAGS[*]:+<your -e keys>} -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
   fi
 else
   warn "No 'claude' command or Claude Desktop app was found. Skipping Claude registration."
   warn "Once Claude Code (CLI or Desktop app) is installed, register with:"
-  warn "  claude mcp add -s user -e ANTHROPIC_API_KEY=... modelmux -- node ${MODELMUX_DIR}/src/server.js"
+  warn "  claude mcp add -s user modelmux -e ANTHROPIC_API_KEY=... -- node ${MODELMUX_DIR}/src/server.js"
 fi
 
 # Locate a usable `codex` executable. Prefer one on PATH; otherwise fall back to

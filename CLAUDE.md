@@ -21,7 +21,13 @@ user-facing docs.
 - **`src/test.js`** — connectivity + file I/O smoke test (`npm test`).
 - **`install.sh`** — per-machine installer: checks Node, copies files to
   `~/.modelmux/`, prompts for API keys (saved to `~/.zshrc`), and registers the
-  server with Claude Code and Codex.
+  server with Claude Code and Codex. Detects each Desktop app's bundled binary
+  when no CLI is on PATH, registers with keys embedded as env vars, and uses
+  node's absolute path. **Claude's `-e` is variadic — the server name must come
+  before the `-e` flags or it gets swallowed as an env var.** Codex uses `--env`.
+- **`update-keys.sh`** — re-syncs the embedded API keys from `~/.zshrc` into the
+  Claude and Codex registrations (Desktop apps don't read `~/.zshrc`, so the
+  embedded copies go stale when a key is rotated).
 
 ## Hard constraints — keep these intact
 
