@@ -349,6 +349,8 @@ You need a small amount of credit loaded on each API account — even $5 on each
 modelmux/
 ├── install.sh          ← run this on each Mac
 ├── update-keys.sh      ← re-sync API keys into the Desktop apps after rotating
+├── lib/
+│   └── common.sh       ← shared shell helpers (host detection, key flags)
 ├── package.json
 ├── package-lock.json
 ├── README.md

@@ -26,28 +26,24 @@
 
 set -e  # Exit immediately if any command fails
 
+# Resolve the directory this script lives in, regardless of where it was called
+# from — used to locate the shared helper library and the files to install.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Shared helpers: colour output, host detection, node/key-flag building.
+# shellcheck source=lib/common.sh
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+  source "$SCRIPT_DIR/lib/common.sh"
+else
+  echo "Error: lib/common.sh was not found next to install.sh. Re-clone the repo." >&2
+  exit 1
+fi
+
 # Destination directory for the installed modelmux files
 MODELMUX_DIR="$HOME/.modelmux"
 
 # Shell profile where API keys are persisted between sessions
 SHELL_RC="$HOME/.zshrc"
-
-# ---------------------------------------------------------------------------
-# Terminal colour helpers
-# ---------------------------------------------------------------------------
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-BOLD='\033[1m'
-RESET='\033[0m'
-
-info()    { echo -e "${BLUE}▸${RESET} $1"; }
-success() { echo -e "${GREEN}✓${RESET} $1"; }
-warn()    { echo -e "${YELLOW}⚠${RESET}  $1"; }
-fail()    { echo -e "${RED}✗${RESET} $1"; exit 1; }
-header()  { echo -e "\n${BOLD}$1${RESET}"; }
 
 # ---------------------------------------------------------------------------
 # Preflight: confirm Node.js 18+ is available
@@ -77,17 +73,16 @@ success "Node.js v${NODE_VER} found"
 
 header "Installing modelmux files"
 
-# Resolve the directory this script lives in, regardless of where it was called from.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-mkdir -p "$MODELMUX_DIR/src"
+mkdir -p "$MODELMUX_DIR/src" "$MODELMUX_DIR/lib"
 
 cp "$SCRIPT_DIR/src/server.js" "$MODELMUX_DIR/src/server.js"
 cp "$SCRIPT_DIR/src/test.js"   "$MODELMUX_DIR/src/test.js"
 cp "$SCRIPT_DIR/package.json"  "$MODELMUX_DIR/package.json"
 
-# Copy the key-refresh helper so it can be run later from the install location.
+# Copy the key-refresh helper and the shared library it sources, so update-keys.sh
+# can be run later from the install location.
 [ -f "$SCRIPT_DIR/update-keys.sh" ] && cp "$SCRIPT_DIR/update-keys.sh" "$MODELMUX_DIR/update-keys.sh"
+cp "$SCRIPT_DIR/lib/common.sh" "$MODELMUX_DIR/lib/common.sh"
 
 # Ensure the server is executable so it can be invoked directly if needed.
 chmod +x "$MODELMUX_DIR/src/server.js"
@@ -157,49 +152,16 @@ read_key "Perplexity API key (needed for ask_perplexity)" \
 source "$SHELL_RC" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# Build the list of --env flags for MCP registration.
+# Prepare registration inputs
 #
-# This is important for the Claude *Desktop app*: apps launched from the Dock do
-# not load ~/.zshrc, so a server spawned by the app cannot see API keys exported
-# there. Passing the keys as --env values stores them in the MCP server config so
-# the server always finds them, regardless of how the host was launched.
-#
-# Only keys that are actually set are forwarded. (The keys were loaded into this
-# shell by the `source "$SHELL_RC"` above.)
+# Build the per-host --env flag arrays (ENV_FLAGS for Claude, CODEX_ENV_FLAGS for
+# Codex) from the keys just loaded from ~/.zshrc, and resolve an absolute node
+# path. Embedding the keys in the MCP config is what lets a Dock-launched Desktop
+# app — which never reads ~/.zshrc — find them. See lib/common.sh for details.
 # ---------------------------------------------------------------------------
 
-# Claude uses `-e KEY=VALUE`; Codex uses `--env KEY=VALUE`. Build both.
-ENV_FLAGS=()        # for claude
-CODEX_ENV_FLAGS=()  # for codex
-if [ -n "$ANTHROPIC_API_KEY" ];  then ENV_FLAGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   CODEX_ENV_FLAGS+=(--env "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   fi
-if [ -n "$OPENAI_API_KEY" ];     then ENV_FLAGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY");         CODEX_ENV_FLAGS+=(--env "OPENAI_API_KEY=$OPENAI_API_KEY");         fi
-if [ -n "$PERPLEXITY_API_KEY" ]; then ENV_FLAGS+=(-e "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); CODEX_ENV_FLAGS+=(--env "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); fi
-
-# Resolve an absolute path to node. Dock-launched apps often lack the user's PATH
-# (e.g. an nvm-managed node), so registering the server with a bare "node" can
-# fail to launch. Fall back to "node" if it can't be resolved here.
-NODE_BIN=$(command -v node 2>/dev/null || echo node)
-
-# Locate a usable `claude` executable. Prefer one on PATH (the standalone CLI);
-# otherwise fall back to the binary bundled inside the Claude Desktop app, which
-# is not on PATH but works the same way for `mcp` subcommands. The highest
-# version directory is chosen if several are installed.
-find_claude() {
-  if command -v claude &>/dev/null; then
-    command -v claude
-    return 0
-  fi
-  # Pick the most recently modified bundled binary (newest install). Uses BSD
-  # `ls -t` for portability — macOS `sort` has no GNU `-V` version flag.
-  local bundled
-  bundled=$(ls -dt "$HOME/Library/Application Support/Claude/claude-code/"*/claude.app/Contents/MacOS/claude 2>/dev/null \
-    | head -1)
-  if [ -n "$bundled" ] && [ -x "$bundled" ]; then
-    echo "$bundled"
-    return 0
-  fi
-  return 1
-}
+build_env_flags
+NODE_BIN=$(resolve_node)
 
 # ---------------------------------------------------------------------------
 # Register with Claude Code
@@ -230,27 +192,6 @@ else
   warn "Once Claude Code (CLI or Desktop app) is installed, register with:"
   warn "  claude mcp add -s user modelmux -e ANTHROPIC_API_KEY=... -- node ${MODELMUX_DIR}/src/server.js"
 fi
-
-# Locate a usable `codex` executable. Prefer one on PATH; otherwise fall back to
-# the binary bundled inside the Codex Desktop app, which is not on PATH but works
-# the same way for `mcp` subcommands.
-find_codex() {
-  if command -v codex &>/dev/null; then
-    command -v codex
-    return 0
-  fi
-  local candidate
-  for candidate in \
-    "$HOME/.codex/plugins/.plugin-appserver/codex" \
-    "/Applications/Codex.app/Contents/Resources/codex" \
-    "/Applications/Codex.app/Contents/MacOS/codex"; do
-    if [ -x "$candidate" ]; then
-      echo "$candidate"
-      return 0
-    fi
-  done
-  return 1
-}
 
 # ---------------------------------------------------------------------------
 # Register with Codex

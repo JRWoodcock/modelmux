@@ -23,15 +23,16 @@ SHELL_RC="$HOME/.zshrc"
 MODELMUX_DIR="$HOME/.modelmux"
 SERVER="$MODELMUX_DIR/src/server.js"
 
-# ---------------------------------------------------------------------------
-# Terminal colour helpers
-# ---------------------------------------------------------------------------
-
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; BOLD='\033[1m'; RESET='\033[0m'
-info()    { echo -e "${BLUE}▸${RESET} $1"; }
-success() { echo -e "${GREEN}✓${RESET} $1"; }
-warn()    { echo -e "${YELLOW}⚠${RESET}  $1"; }
-header()  { echo -e "\n${BOLD}$1${RESET}"; }
+# Shared helpers (colour output, host detection, node/key-flag building). When run
+# from the install location this resolves to ~/.modelmux/lib/common.sh.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+  source "$SCRIPT_DIR/lib/common.sh"
+else
+  echo "Error: lib/common.sh not found next to update-keys.sh. Re-run install.sh." >&2
+  exit 1
+fi
 
 header "modelmux — refresh API keys"
 
@@ -53,40 +54,9 @@ if [ ! -f "$SERVER" ]; then
   exit 1
 fi
 
-# Claude uses `-e KEY=VALUE`; Codex uses `--env KEY=VALUE`. Build both lists,
-# including only the keys that are actually set.
-ENV_FLAGS=()        # for claude
-CODEX_ENV_FLAGS=()  # for codex
-if [ -n "$ANTHROPIC_API_KEY" ];  then ENV_FLAGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   CODEX_ENV_FLAGS+=(--env "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY");   fi
-if [ -n "$OPENAI_API_KEY" ];     then ENV_FLAGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY");         CODEX_ENV_FLAGS+=(--env "OPENAI_API_KEY=$OPENAI_API_KEY");         fi
-if [ -n "$PERPLEXITY_API_KEY" ]; then ENV_FLAGS+=(-e "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); CODEX_ENV_FLAGS+=(--env "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY"); fi
-
-# Absolute path to node — Dock-launched apps may not have it on PATH.
-NODE_BIN=$(command -v node 2>/dev/null || echo node)
-
-# ---------------------------------------------------------------------------
-# Locate the host executables (CLI on PATH, else the Desktop app's bundled one)
-# ---------------------------------------------------------------------------
-
-find_claude() {
-  if command -v claude &>/dev/null; then command -v claude; return 0; fi
-  local bundled
-  bundled=$(ls -dt "$HOME/Library/Application Support/Claude/claude-code/"*/claude.app/Contents/MacOS/claude 2>/dev/null | head -1)
-  [ -n "$bundled" ] && [ -x "$bundled" ] && { echo "$bundled"; return 0; }
-  return 1
-}
-
-find_codex() {
-  if command -v codex &>/dev/null; then command -v codex; return 0; fi
-  local candidate
-  for candidate in \
-    "$HOME/.codex/plugins/.plugin-appserver/codex" \
-    "/Applications/Codex.app/Contents/Resources/codex" \
-    "/Applications/Codex.app/Contents/MacOS/codex"; do
-    [ -x "$candidate" ] && { echo "$candidate"; return 0; }
-  done
-  return 1
-}
+# Build the --env flag arrays and resolve an absolute node path (see lib/common.sh).
+build_env_flags
+NODE_BIN=$(resolve_node)
 
 # ---------------------------------------------------------------------------
 # Re-register with each host (remove first so the env block is replaced cleanly)

@@ -28,6 +28,11 @@ user-facing docs.
 - **`update-keys.sh`** — re-syncs the embedded API keys from `~/.zshrc` into the
   Claude and Codex registrations (Desktop apps don't read `~/.zshrc`, so the
   embedded copies go stale when a key is rotated).
+- **`lib/common.sh`** — shared shell helpers sourced by both `install.sh` and
+  `update-keys.sh` (colour output, `find_claude`/`find_codex` host detection,
+  `resolve_node`, `build_env_flags`). Keep host-detection/key logic here, not
+  duplicated in the two entry scripts. `install.sh` copies it to
+  `~/.modelmux/lib/` so `update-keys.sh` can source it post-install.
 - `install.sh` also appends a Codex tool-routing rule to `~/.codex/AGENTS.md`
   (fenced by a `<!-- modelmux:tool-routing -->` marker) so "ask Claude/Perplexity"
   uses the modelmux MCP tools instead of Codex's Computer Use plugin. The append
