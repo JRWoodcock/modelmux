@@ -30,9 +30,6 @@ MODELMUX_DIR="$HOME/.modelmux"
 # Shell profile where API keys are persisted between sessions
 SHELL_RC="$HOME/.zshrc"
 
-# Path to Claude Code's MCP server configuration
-CLAUDE_SETTINGS="$HOME/.claude/settings.json"
-
 # ---------------------------------------------------------------------------
 # Terminal colour helpers
 # ---------------------------------------------------------------------------
@@ -155,43 +152,69 @@ read_key "Perplexity API key (needed for ask_perplexity)" \
 source "$SHELL_RC" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
+# Build the list of --env flags for MCP registration.
+#
+# This is important for the Claude *Desktop app*: apps launched from the Dock do
+# not load ~/.zshrc, so a server spawned by the app cannot see API keys exported
+# there. Passing the keys as --env values stores them in the MCP server config so
+# the server always finds them, regardless of how the host was launched.
+#
+# Only keys that are actually set are forwarded. (The keys were loaded into this
+# shell by the `source "$SHELL_RC"` above.)
+# ---------------------------------------------------------------------------
+
+ENV_FLAGS=()
+[ -n "$ANTHROPIC_API_KEY" ]  && ENV_FLAGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
+[ -n "$OPENAI_API_KEY" ]     && ENV_FLAGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY")
+[ -n "$PERPLEXITY_API_KEY" ] && ENV_FLAGS+=(-e "PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY")
+
+# Locate a usable `claude` executable. Prefer one on PATH (the standalone CLI);
+# otherwise fall back to the binary bundled inside the Claude Desktop app, which
+# is not on PATH but works the same way for `mcp` subcommands. The highest
+# version directory is chosen if several are installed.
+find_claude() {
+  if command -v claude &>/dev/null; then
+    command -v claude
+    return 0
+  fi
+  # Pick the most recently modified bundled binary (newest install). Uses BSD
+  # `ls -t` for portability — macOS `sort` has no GNU `-V` version flag.
+  local bundled
+  bundled=$(ls -dt "$HOME/Library/Application Support/Claude/claude-code/"*/claude.app/Contents/MacOS/claude 2>/dev/null \
+    | head -1)
+  if [ -n "$bundled" ] && [ -x "$bundled" ]; then
+    echo "$bundled"
+    return 0
+  fi
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Register with Claude Code
 # ---------------------------------------------------------------------------
 
 header "Registering with Claude Code"
 
-if command -v claude &>/dev/null; then
-  if grep -q "modelmux" "$CLAUDE_SETTINGS" 2>/dev/null; then
-    warn "modelmux is already listed in ${CLAUDE_SETTINGS} — skipping"
-  else
-    # Attempt registration via the claude CLI. Only fall back to writing a
-    # settings file if one does not already exist — never overwrite an existing
-    # configuration, as that would clobber the user's other Claude Code settings.
-    if claude mcp add modelmux -- node "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
-      success "Registered with Claude Code via 'claude mcp add'"
-    elif [ ! -e "$CLAUDE_SETTINGS" ]; then
-      mkdir -p "$HOME/.claude"
-      cat > "$CLAUDE_SETTINGS" <<EOF
-{
-  "mcpServers": {
-    "modelmux": {
-      "command": "node",
-      "args": ["$MODELMUX_DIR/src/server.js"]
-    }
-  }
-}
-EOF
-      success "Created ${CLAUDE_SETTINGS} with modelmux entry"
-    else
-      warn "Could not auto-register and ${CLAUDE_SETTINGS} already exists — leaving it untouched."
-      warn "Register manually with:"
-      warn "  claude mcp add modelmux -- node ${MODELMUX_DIR}/src/server.js"
+CLAUDE_BIN=$(find_claude || true)
+
+if [ -n "$CLAUDE_BIN" ]; then
+  if "$CLAUDE_BIN" mcp list 2>/dev/null | grep -q "modelmux"; then
+    warn "modelmux is already registered with Claude Code — skipping"
+  # Register at user scope so modelmux is available in every project, with the
+  # API keys baked in as env vars (see the ENV_FLAGS note above).
+  elif "$CLAUDE_BIN" mcp add -s user "${ENV_FLAGS[@]}" modelmux -- node "$MODELMUX_DIR/src/server.js" 2>/dev/null; then
+    success "Registered with Claude Code (user scope, keys included)"
+    if ! command -v claude &>/dev/null; then
+      info "Used the Claude Desktop app's bundled binary (no 'claude' CLI on PATH)."
     fi
+  else
+    warn "Claude registration failed. Register manually with:"
+    warn "  \"$CLAUDE_BIN\" mcp add -s user ${ENV_FLAGS[*]:+<your -e keys>} modelmux -- node ${MODELMUX_DIR}/src/server.js"
   fi
 else
-  warn "The claude CLI was not found. Skipping Claude Code registration."
-  warn "Once Claude Code is installed, run:"
-  warn "  claude mcp add modelmux -- node ${MODELMUX_DIR}/src/server.js"
+  warn "No 'claude' command or Claude Desktop app was found. Skipping Claude registration."
+  warn "Once Claude Code (CLI or Desktop app) is installed, register with:"
+  warn "  claude mcp add -s user -e ANTHROPIC_API_KEY=... modelmux -- node ${MODELMUX_DIR}/src/server.js"
 fi
 
 # ---------------------------------------------------------------------------

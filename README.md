@@ -93,17 +93,37 @@ bash install.sh
 
 ### Manual registration (if the installer skipped a tool)
 
-If Claude Code or Codex wasn't found during install, register manually after installing them:
+If Claude Code or Codex wasn't found during install, register manually after installing them.
 
-**Claude Code:**
+**Claude Code (CLI):** register at user scope and pass your keys as `--env` values, so the server has them no matter how the host is launched:
 ```bash
-claude mcp add modelmux -- node ~/.modelmux/src/server.js
+claude mcp add -s user \
+  -e ANTHROPIC_API_KEY="sk-ant-..." \
+  -e OPENAI_API_KEY="sk-..." \
+  -e PERPLEXITY_API_KEY="pplx-..." \
+  modelmux -- node ~/.modelmux/src/server.js
 ```
+
+**Claude Desktop app (no `claude` on PATH):** the app bundles the CLI — call it directly with the same arguments:
+```bash
+"$HOME/Library/Application Support/Claude/claude-code/"*/claude.app/Contents/MacOS/claude \
+  mcp add -s user -e ANTHROPIC_API_KEY="sk-ant-..." -e OPENAI_API_KEY="sk-..." \
+  -e PERPLEXITY_API_KEY="pplx-..." modelmux -- node ~/.modelmux/src/server.js
+```
+
+> **Why `--env`?** The Claude Desktop app is launched from the Dock, so it does
+> **not** load `~/.zshrc` — a server it spawns can't see API keys exported there.
+> Passing the keys with `-e` stores them in the MCP config so they're always
+> found. Trade-off: if you later rotate a key in `~/.zshrc`, re-run the
+> registration (or edit the entry) so the stored copy is updated too.
 
 **Codex:**
 ```bash
 codex mcp add modelmux -- node ~/.modelmux/src/server.js
 ```
+(Codex runs from your terminal, so it inherits keys from `~/.zshrc` — no `--env` needed.)
+
+After registering, **fully quit and reopen** Claude Code / the Desktop app (Cmd+Q, not just closing the window) so it loads the new server.
 
 ---
 
@@ -310,10 +330,13 @@ modelmux/
 ## Troubleshooting
 
 **Tools don't appear in Claude Code or Codex**
-Restart the app after registration. MCP servers are loaded at startup.
+Restart the app after registration. MCP servers are loaded at startup — and for the Desktop app you must fully quit it (Cmd+Q), not just close the window.
+
+**Nothing shows up under MCP servers in the Claude Desktop app**
+The installer's auto-registration only runs if it can find a `claude` command. The Desktop app has no `claude` on your PATH, so on older installs the step was skipped. Re-run `bash install.sh` (it now detects the app's bundled binary), or register manually using the **Claude Desktop app** commands under [Manual registration](#manual-registration-if-the-installer-skipped-a-tool). Note it registers at **user** scope, so it appears as a *user* server (available everywhere), not a *local* one.
 
 **"X_API_KEY not set" error**
-Run `source ~/.zshrc` in your terminal before launching the AI tool, or add the export to your shell profile and open a fresh terminal.
+In a **terminal**-launched tool, run `source ~/.zshrc` first (or open a fresh terminal). In the **Claude Desktop app**, exporting keys in `~/.zshrc` is not enough — the app doesn't read your shell profile. Register modelmux with the keys passed as `-e` env values (see [Manual registration](#manual-registration-if-the-installer-skipped-a-tool)); the installer does this for you.
 
 **Connectivity test fails**
 Check that the key is correct and that your API account has credit loaded. Perplexity requires a paid API plan (separate from Perplexity Pro).
