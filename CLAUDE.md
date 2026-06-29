@@ -28,6 +28,10 @@ user-facing docs.
 - **`update-keys.sh`** — re-syncs the embedded API keys from `~/.zshrc` into the
   Claude and Codex registrations (Desktop apps don't read `~/.zshrc`, so the
   embedded copies go stale when a key is rotated).
+- `install.sh` also appends a Codex tool-routing rule to `~/.codex/AGENTS.md`
+  (fenced by a `<!-- modelmux:tool-routing -->` marker) so "ask Claude/Perplexity"
+  uses the modelmux MCP tools instead of Codex's Computer Use plugin. The append
+  is idempotent (marker-gated) and never overwrites existing AGENTS.md content.
 
 ## Hard constraints — keep these intact
 

@@ -16,7 +16,9 @@
 #   2. Copies the modelmux files to ~/.modelmux/
 #   3. Prompts for API keys and saves them to ~/.zshrc
 #   4. Registers modelmux with Claude Code and Codex via their MCP commands
-#   5. Runs the connectivity and file I/O test to confirm everything works
+#   5. Adds a Codex tool-routing rule so "ask Claude/Perplexity" uses modelmux
+#      instead of Computer Use (appended once to ~/.codex/AGENTS.md)
+#   6. Runs the connectivity and file I/O test to confirm everything works
 #
 # Author:  Jason R. Woodcock
 # License: Apache-2.0 — see the LICENSE and NOTICE files.
@@ -276,6 +278,56 @@ else
   warn "No 'codex' command or Codex Desktop app was found. Skipping Codex registration."
   warn "Once Codex (CLI or Desktop app) is installed, register with:"
   warn "  codex mcp add --env OPENAI_API_KEY=... modelmux -- $NODE_BIN ${MODELMUX_DIR}/src/server.js"
+fi
+
+# ---------------------------------------------------------------------------
+# Codex tool routing
+#
+# Codex's Computer Use plugin can interpret "ask Claude" as "open the Claude app
+# on screen" instead of calling modelmux's ask_claude tool. This appends a small
+# routing rule to Codex's global instructions (~/.codex/AGENTS.md) so "ask
+# <model>" phrasing prefers the modelmux MCP tools, while Computer Use is left
+# untouched for every other task.
+#
+# It is additive and safe: the block is fenced by a marker so it is added only
+# once and never overwrites your own instructions. Remove the marked block to
+# undo. Only runs when Codex is present.
+# ---------------------------------------------------------------------------
+
+if [ -n "$CODEX_BIN" ]; then
+  header "Configuring Codex tool routing"
+
+  CODEX_AGENTS="$HOME/.codex/AGENTS.md"
+  ROUTING_MARKER="<!-- modelmux:tool-routing -->"
+
+  if [ -f "$CODEX_AGENTS" ] && grep -qF "$ROUTING_MARKER" "$CODEX_AGENTS" 2>/dev/null; then
+    warn "modelmux routing rule already present in ${CODEX_AGENTS} — skipping"
+  else
+    mkdir -p "$(dirname "$CODEX_AGENTS")"
+    # Separate any existing content with a blank line, then append the marked
+    # block. The heredoc is quoted ('EOF') so backticks are written literally.
+    [ -s "$CODEX_AGENTS" ] && printf '\n' >> "$CODEX_AGENTS"
+    {
+      printf '%s\n' "$ROUTING_MARKER"
+      cat <<'EOF'
+## Tool routing: modelmux vs Computer Use (added by modelmux install.sh)
+
+I have an MCP server named **modelmux** that calls other AI models through their
+APIs. Its tools are: `ask_claude`, `ask_codex`, `ask_perplexity`, and `broker`.
+
+When I ask you to "ask Claude", "ask Perplexity", get a second opinion from
+another model, compare answers, or "use the broker", call the corresponding
+**modelmux** MCP tool. These are API calls — for these requests do **not** use
+the Computer Use plugin and do **not** open the Claude or Perplexity desktop apps.
+
+Only use Computer Use to reach Claude/Perplexity when I explicitly say to "open"
+the app, control the screen, or otherwise mention Computer Use. Keep using
+Computer Use as normal for every other on-screen task — this rule narrows only
+the "ask <model>" phrasing, nothing else.
+EOF
+    } >> "$CODEX_AGENTS"
+    success "Added modelmux tool-routing rule to ${CODEX_AGENTS}"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

@@ -59,7 +59,8 @@ The installer will:
 1. Check for Node.js 18+
 2. Prompt you for API keys and save them to `~/.zshrc`
 3. Register modelmux with Claude Code and Codex automatically
-4. Run a connectivity test against each API
+4. Add a Codex tool-routing rule (see [Codex: "ask Claude" opens an app](#codex-ask-claude-opens-an-app-instead-of-calling-modelmux))
+5. Run a connectivity test against each API
 
 Then restart Claude Code and/or Codex to pick up the new MCP server.
 
@@ -377,6 +378,9 @@ In a **terminal**-launched tool, run `source ~/.zshrc` first (or open a fresh te
 
 **Server shows as failed / won't launch in a Desktop app**
 The app may not have `node` on its PATH (common when node is managed by nvm). Re-register using the **absolute path to node** instead of bare `node` — find it with `command -v node`. The installer already does this automatically.
+
+**Codex: "ask Claude" opens an app instead of calling modelmux**
+Codex's Computer Use plugin can read "ask Claude" as "open the Claude app on screen" rather than calling modelmux's `ask_claude` tool. The installer adds a routing rule to `~/.codex/AGENTS.md` so "ask `<model>`" phrasing prefers the modelmux tools while leaving Computer Use untouched for everything else — **restart Codex** after install for it to take effect. The rule is fenced by a `<!-- modelmux:tool-routing -->` marker (added once, never overwrites your own notes); delete that marked block to undo. You can always force a tool explicitly: *"use the modelmux `ask_claude` tool to …"*.
 
 **Connectivity test fails**
 Check that the key is correct and that your API account has credit loaded. Perplexity requires a paid API plan (separate from Perplexity Pro).
