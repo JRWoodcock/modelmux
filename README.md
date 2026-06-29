@@ -152,6 +152,28 @@ codex mcp add \
 
 After registering, **fully quit and reopen** the app (Cmd+Q, not just closing the window) so it loads the new server.
 
+### Perplexity Desktop (optional)
+
+The installer does **not** set up Perplexity — modelmux treats Perplexity as a
+*target* it calls (the `ask_perplexity` tool), not as a host. But the Perplexity
+desktop app can itself host local MCP servers, so you can optionally add modelmux
+there to let **Perplexity** pull in Claude and Codex (via `ask_claude`,
+`ask_codex`, and `broker`). Note that `ask_perplexity` is not useful here — it
+would have Perplexity call itself.
+
+Perplexity has no CLI or editable config file, so this is **done through the app
+UI** — there's no scripted path:
+
+1. Open Perplexity → **Settings → Connectors** (a.k.a. "Connectors and sources").
+2. Add a custom / local MCP server (stdio) with:
+   - **Command:** the absolute path to node (e.g. `/Users/you/.nvm/versions/node/vXX/bin/node`; find it with `command -v node`). A bare `node` may not resolve, since the app doesn't inherit your shell PATH.
+   - **Arguments:** `~/.modelmux/src/server.js`
+   - **Environment variables:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `PERPLEXITY_API_KEY` — the app doesn't read `~/.zshrc`, so the keys must be entered here.
+3. **Enable** the connector, then fully quit and reopen Perplexity.
+
+This is purely additive and independent of the Claude/Codex setup — skip it
+unless you specifically want Perplexity to call the other models.
+
 ---
 
 ## API keys
