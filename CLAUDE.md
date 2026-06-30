@@ -30,9 +30,13 @@ user-facing docs.
   embedded copies go stale when a key is rotated).
 - **`lib/common.sh`** — shared shell helpers sourced by both `install.sh` and
   `update-keys.sh` (colour output, `find_claude`/`find_codex` host detection,
-  `resolve_node`, `build_env_flags`). Keep host-detection/key logic here, not
+  `resolve_node`, `build_env_flags`, and the `refresh_{claude,codex}_registration`
+  helpers used by update-keys). Keep host-detection/key logic here, not
   duplicated in the two entry scripts. `install.sh` copies it to
   `~/.modelmux/lib/` so `update-keys.sh` can source it post-install.
+  **Host quirk:** Codex's `mcp add` overwrites an existing server; Claude's
+  errors on a duplicate (must remove first) and its `-e` is variadic (name before
+  flags). The refresh helpers encode this.
 - `install.sh` also appends a Codex tool-routing rule to `~/.codex/AGENTS.md`
   (fenced by a `<!-- modelmux:tool-routing -->` marker) so "ask Claude/Perplexity"
   uses the modelmux MCP tools instead of Codex's Computer Use plugin. The append

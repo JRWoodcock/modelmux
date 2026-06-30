@@ -179,6 +179,8 @@ bash ~/.modelmux/update-keys.sh        # or ./update-keys.sh from the cloned rep
 
 It reloads the keys from `~/.zshrc` and re-registers modelmux with Claude and Codex (whichever it finds). Restart the apps (Cmd+Q, then reopen) afterward. Terminal CLIs don't need this — they read `~/.zshrc` directly.
 
+The re-registration is safe: Codex is updated in place, and Claude (which must be removed before re-adding) is verified and retried, so a transient failure is reported loudly rather than silently leaving an app unregistered.
+
 ### Optional model overrides
 
 ```bash

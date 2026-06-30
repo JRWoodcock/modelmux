@@ -17,7 +17,7 @@
  *   FAIL  — the check ran but produced an unexpected result or error
  *
  * @author  Jason R. Woodcock
- * @version 2.0.0
+ * @version 2.0.1
  * @license Apache-2.0 — see the LICENSE and NOTICE files.
  */
 

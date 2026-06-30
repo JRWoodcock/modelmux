@@ -59,18 +59,21 @@ build_env_flags
 NODE_BIN=$(resolve_node)
 
 # ---------------------------------------------------------------------------
-# Re-register with each host (remove first so the env block is replaced cleanly)
+# Re-register with each host
+#
+# The refresh helpers (in lib/common.sh) handle the per-host differences: Codex
+# overwrites in place, while Claude must be removed first and is therefore
+# verified + retried so a failure can't silently leave it unregistered.
 # ---------------------------------------------------------------------------
 
 header "Updating Claude"
 CLAUDE_BIN=$(find_claude || true)
 if [ -n "$CLAUDE_BIN" ]; then
-  "$CLAUDE_BIN" mcp remove modelmux &>/dev/null || true
-  # Name must precede the variadic -e flags (else "modelmux" is read as an env var).
-  if "$CLAUDE_BIN" mcp add -s user modelmux "${ENV_FLAGS[@]}" -- "$NODE_BIN" "$SERVER" &>/dev/null; then
+  if refresh_claude_registration "$CLAUDE_BIN" "$NODE_BIN" "$SERVER"; then
     success "Claude keys refreshed."
   else
-    warn "Could not update Claude. Register manually (see README)."
+    warn "Could not re-register modelmux with Claude — it may now be UNREGISTERED."
+    warn "Re-run this script to retry, or register manually (see README)."
   fi
 else
   warn "Claude not found — skipping."
@@ -79,8 +82,7 @@ fi
 header "Updating Codex"
 CODEX_BIN=$(find_codex || true)
 if [ -n "$CODEX_BIN" ]; then
-  "$CODEX_BIN" mcp remove modelmux &>/dev/null || true
-  if "$CODEX_BIN" mcp add "${CODEX_ENV_FLAGS[@]}" modelmux -- "$NODE_BIN" "$SERVER" &>/dev/null; then
+  if refresh_codex_registration "$CODEX_BIN" "$NODE_BIN" "$SERVER"; then
     success "Codex keys refreshed."
   else
     warn "Could not update Codex. Register manually (see README)."

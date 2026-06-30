@@ -97,3 +97,38 @@ build_env_flags() {
     fi
   done
 }
+
+# ---------------------------------------------------------------------------
+# Re-registration helpers (used by update-keys.sh to refresh embedded keys)
+#
+# The two hosts behave differently when a server name already exists:
+#   - Codex  `mcp add` OVERWRITES the entry → a plain add refreshes it safely,
+#     with no window where modelmux is unregistered.
+#   - Claude `mcp add` ERRORS on a duplicate name → the entry must be removed
+#     first, which briefly leaves modelmux unregistered. To harden that window
+#     the Claude helper verifies the add actually took and retries once, so a
+#     transient failure can't silently leave Claude without modelmux.
+#
+# Both read the flag arrays populated by build_env_flags. Each returns 0 only
+# when modelmux is confirmed present afterwards, non-zero otherwise.
+# Args: $1 = host binary, $2 = absolute node path, $3 = server.js path.
+# ---------------------------------------------------------------------------
+
+refresh_claude_registration() {
+  local bin="$1" node_bin="$2" server="$3" _attempt
+  "$bin" mcp remove modelmux &>/dev/null || true
+  for _attempt in 1 2; do
+    # Name precedes the variadic -e flags, or "modelmux" is read as an env var.
+    if "$bin" mcp add -s user modelmux "${ENV_FLAGS[@]}" -- "$node_bin" "$server" &>/dev/null \
+       && "$bin" mcp list 2>/dev/null | grep -q modelmux; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+refresh_codex_registration() {
+  local bin="$1" node_bin="$2" server="$3"
+  "$bin" mcp add "${CODEX_ENV_FLAGS[@]}" modelmux -- "$node_bin" "$server" &>/dev/null \
+    && "$bin" mcp list 2>/dev/null | grep -q modelmux
+}
