@@ -152,25 +152,6 @@ codex mcp add \
 
 After registering, **fully quit and reopen** the app (Cmd+Q, not just closing the window) so it loads the new server.
 
-### Perplexity Desktop — not currently supported
-
-The installer does **not** set up Perplexity, and you **cannot** add modelmux to
-the Perplexity desktop app today. This is a transport mismatch:
-
-- modelmux is a **stdio** MCP server (launched as a subprocess; no network port).
-- Perplexity's **Settings → Connectors → "Add custom connector"** only accepts a
-  **remote MCP server URL** (`https://…/mcp`) with OAuth / API Key / None auth.
-  There is no field for a local command, so a stdio server can't be registered.
-
-In any case this is a separate, optional use — modelmux already calls Perplexity
-through the `ask_perplexity` tool; hosting modelmux *inside* Perplexity would only
-let Perplexity call Claude/Codex, and `ask_perplexity` would just be Perplexity
-calling itself.
-
-To make this work, modelmux would need an HTTP transport (servable at a local
-URL such as `http://127.0.0.1:PORT/mcp`) so Perplexity could add it as a remote
-connector. That is not implemented yet — see the issue tracker if you want it.
-
 ---
 
 ## API keys
